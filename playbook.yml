@@ -32,7 +32,7 @@
           path: "/etc/named.conf"
           regexp: "{{ item }}"
           line: "#{{ item }}"
-        loop: {{ lineas_comentar }}
+        loop: "{{ lineas_comentar }}"
         notify: "reiniciar_named"
 
       - meta: flush_handlers
@@ -59,7 +59,7 @@
           state: present
 
       always:
-        -name: "Reinicio"
+        - name: "Reinicio"
           reboot:
 
         - name: "Comprobar named"
@@ -70,7 +70,7 @@
         
         - name: "Mostrar estado"
           debug:
-            msg: "Estado de named: {{ estado_named.state }}"
+            msg: "Estado de named: {{ estado_named }}"
         
   handlers:
     - name: "arrancar_named"
@@ -84,4 +84,4 @@
         name: named
         state: restarted
 
-  ...
+...
