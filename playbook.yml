@@ -1,0 +1,87 @@
+---
+- name: "Laboratorio de Handlers"
+  hosts: nodo_01
+  vars:
+    paqueteria:
+      - bind
+      - bind-utils
+    lineas_comentar:
+      - "listen-on port 53 { 127.0.0.1; };"
+      - "listen-on-v6 port 53 { ::1; };"
+    
+  tasks:
+    - block:
+      - name: "Instalar paqueteria"
+        yum:
+          name: "{{ item }}"
+          state: present
+        loop: "{{ paqueteria }}"
+        notify: "arrancar_named"
+      
+      - meta: flush_handlers
+
+      - name: "Anadir servicio DNS al firewall"
+        firewalld:
+          service: dns
+          permanent: yes
+          state: enabled
+          zone: public
+
+      - name: "Comentar lineas"
+        lineinfile:
+          path: "/etc/named.conf"
+          regexp: "{{ item }}"
+          line: "#{{ item }}"
+        loop: {{ lineas_comentar }}
+        notify: "reiniciar_named"
+
+      - meta: flush_handlers
+    
+      - name: "Modificar /etc/sysconfig/named"
+        lineinfile:
+          path: "/etc/sysconfig/named"
+          regexp: '^%OPTIONS=^'
+          line: 'OPTIONS=-4'
+        notify: "reiniciar_named"
+    
+      - meta: flush_handlers
+
+      - name: "Modificar /etc/resolv.conf. Borrar nameservers"
+        lineinfile:
+          path: "/etc/resolv.conf"
+          regexp: '\nameserver'
+          state: absent
+      
+      - name: "Modificar /etc/resolv.conf. Insertar nameservers nodo01"
+        lineinfile:
+          path: "/etc/resolv.conf"
+          line: "{{ ansible_facts['default_ipv4']['address'] }} {{ ansible_facts['hostname']}}"
+          state: present
+
+    always:
+      -name: "Reinicio"
+        reboot:
+
+      - name: "Comprobar named"
+        service:
+          name: named
+          state: started
+        register: estado_named
+      
+      - name: "Mostrar estado"
+        debug:
+          msg: "Estado de named: {{ estado_named.state }}"
+        
+  handlers:
+    - name: "arrancar_named"
+      service:
+        name: named
+        state: started
+        enabled: true
+    
+    - name: "reiniciar_named"
+      service:
+        name: named
+        state: restarted
+
+  ...
