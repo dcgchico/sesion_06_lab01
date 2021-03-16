@@ -58,19 +58,19 @@
           line: "{{ ansible_facts['default_ipv4']['address'] }} {{ ansible_facts['hostname']}}"
           state: present
 
-    always:
-      -name: "Reinicio"
-        reboot:
+      always:
+        -name: "Reinicio"
+          reboot:
 
-      - name: "Comprobar named"
-        service:
-          name: named
-          state: started
-        register: estado_named
-      
-      - name: "Mostrar estado"
-        debug:
-          msg: "Estado de named: {{ estado_named.state }}"
+        - name: "Comprobar named"
+          service:
+            name: named
+            state: started
+          register: estado_named
+        
+        - name: "Mostrar estado"
+          debug:
+            msg: "Estado de named: {{ estado_named.state }}"
         
   handlers:
     - name: "arrancar_named"
